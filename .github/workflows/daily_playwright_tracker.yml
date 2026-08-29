@@ -2,9 +2,8 @@ name: Daily Ocean ETA Playwright Crawler
 
 on:
   schedule:
-    # 每日美東時間早上 8:00 (夏令 UTC 12:00 / 冬令 UTC 13:00)
     - cron: '0 12 * * *'
-  workflow_dispatch: # 支援在 GitHub 介面上手動隨時點擊「Run workflow」立即執行
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,16 +14,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Playwright & Browsers
+      - name: Install Dependencies & Chromium
         run: |
-          pip install playwright
-          playwright install chromium --with-deps
+          python -m pip install --upgrade pip
+          pip install playwright requests
+          python -m playwright install --with-deps chromium
 
       - name: Execute Crawler
         run: |
