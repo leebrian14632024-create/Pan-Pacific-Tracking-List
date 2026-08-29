@@ -33,7 +33,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
 
-    /* Header */
     header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
       color: white;
@@ -54,7 +53,6 @@
     .brand span { font-size: 0.8rem; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; }
     .header-actions { display: flex; gap: 10px; align-items: center; }
     
-    /* Buttons */
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 6px;
@@ -76,7 +74,6 @@
 
     .container { max-width: 1500px; margin: 1.5rem auto; padding: 0 1.5rem; }
 
-    /* Summary Stats */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -93,7 +90,6 @@
     .stat-card .label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
 
-    /* Controls Bar */
     .controls {
       background: var(--card-bg);
       border-radius: var(--radius);
@@ -128,7 +124,6 @@
       cursor: pointer;
     }
 
-    /* Editable Table */
     .table-container {
       background: var(--card-bg);
       border-radius: var(--radius);
@@ -142,7 +137,6 @@
     td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover { background-color: #fdfdfd; }
 
-    /* Editable Cell Styling */
     .editable {
       padding: 4px 6px;
       border-radius: 4px;
@@ -162,14 +156,27 @@
       cursor: pointer;
       color: var(--text);
     }
+
+    .track-btn {
+      padding: 2px 7px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-left: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .track-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
     
     .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; }
     .text-mbl { color: var(--primary); }
-    .badge-status { font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; display: inline-block; }
-    .status-clear { background: var(--success-bg); color: var(--success-text); }
-    .status-vessel { background: var(--info-bg); color: var(--info-text); }
-    .status-pending { background: var(--warning-bg); color: var(--warning-text); }
-
     .help-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right; }
   </style>
 </head>
@@ -182,23 +189,18 @@
         <span>Live Portal</span>
       </div>
       <div class="header-actions">
+        <button class="btn btn-outline" onclick="fetchLiveJSON()">🔄 Fetch Latest ETA</button>
         <button class="btn btn-outline" onclick="addNewRow()">+ Add Shipment</button>
         <button class="btn btn-outline" onclick="exportToCSV()">Export CSV</button>
-        <button class="btn btn-primary" onclick="resetToDefault()">Reset Defaults</button>
       </div>
     </div>
   </header>
 
   <div class="container">
-    <!-- Stat Cards -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">Active Shipments</div>
         <div class="value" id="statActive">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Arriving in 7 Days</div>
-        <div class="value" id="statArriving">0</div>
       </div>
       <div class="stat-card">
         <div class="label">Pending OBL / Documents</div>
@@ -210,7 +212,6 @@
       </div>
     </div>
 
-    <!-- Search & Filters -->
     <div class="controls">
       <input type="text" id="searchInput" class="search-input" placeholder="Search by MBL, Container No., Release, or Notes..." />
       
@@ -240,7 +241,6 @@
       </div>
     </div>
 
-    <!-- Editable Shipment Table -->
     <div class="table-container">
       <table>
         <thead>
@@ -260,70 +260,50 @@
         <tbody id="shipmentTableBody"></tbody>
       </table>
     </div>
-    <p class="help-hint">💡 <em>Tip: Click directly on any text cell to edit. Carrier can be selected via dropdown. Changes auto-save to browser storage.</em></p>
+    <p class="help-hint">💡 <em>Tip: Updated daily at 8:00 AM EDT via Playwright crawler. All fields remain editable online.</em></p>
   </div>
 
   <script>
-    const defaultShipments = [
-      { id: 1, carrier: "Evergreen", mbl: "EGLV003600696133", cntr: "EGHU9187831", type: "FCL", etd: "7/8", eta: "8/18", ombl: "OBL & Payment- 8/19 sent", delivery: "CNTR RLS, pending pick up", notes: "Payment Received", isClosed: false },
-      { id: 2, carrier: "ZIM", mbl: "ZIMUTPE8275414", cntr: "BSIU3360754", type: "FCL", etd: "7/15", eta: "8/18", ombl: "OBL & Payment- 8/5 sent", delivery: "Picked up 8/26, empty return LFD", notes: "Payment Received", isClosed: false },
-      { id: 3, carrier: "ONE", mbl: "ONEYCCUG12844600", cntr: "SC2U26044254", type: "LCL", etd: "8/29", eta: "8/25", ombl: "On Vessel", delivery: "Custom Clearance & Delivery", notes: "Pending delivery info", isClosed: false },
-      { id: 4, carrier: "ONE", mbl: "ONEYTPEG47132800", cntr: "TRHU7108594", type: "GRP", etd: "6/23", eta: "8/31", ombl: "On Vessel", delivery: "STG (Devanning Ins. sent)", notes: "Payment Received", isClosed: false },
-      { id: 5, carrier: "ONE", mbl: "ONEYTPEG48903800", cntr: "KKFU7913205", type: "GRP", etd: "6/30", eta: "9/8", ombl: "On Vessel", delivery: "STG (Devanning Ins. sent)", notes: "Door Delivery / Payment Received", isClosed: false },
-      { id: 6, carrier: "ONE", mbl: "ONEYTPEG48905300", cntr: "ONEU1307066", type: "GRP", etd: "6/30", eta: "9/8", ombl: "On Vessel", delivery: "STG (Devanning Ins. sent)", notes: "Payment Received", isClosed: false },
-      { id: 7, carrier: "ONE", mbl: "ONEYTPEG48906400", cntr: "BEAU5401003", type: "GRP", etd: "6/30", eta: "9/8", ombl: "-", delivery: "8/27 Processed", notes: "-", isClosed: false },
-      { id: 8, carrier: "ONE", mbl: "ONEYTPEG50671300", cntr: "FFAU1633536", type: "LCL", etd: "7/19", eta: "9/10", ombl: "On Vessel", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 9, carrier: "Evergreen", mbl: "EGLV147601159946", cntr: "EGSU1410897", type: "GRP", etd: "8/14", eta: "9/13", ombl: "i Bill surrendered", delivery: "CODA", notes: "-", isClosed: false },
-      { id: 10, carrier: "Yang Ming", mbl: "YMJAE209084873", cntr: "YMLU5421731", type: "FCL", etd: "7/29", eta: "9/15", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 11, carrier: "ZIM", mbl: "ZIMUTPE8275328", cntr: "TCKU7150549", type: "FCL", etd: "7/22", eta: "9/16", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 12, carrier: "Evergreen", mbl: "EGLV003600762667", cntr: "EMCU1778175", type: "FCL", etd: "7/22", eta: "9/16", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 13, carrier: "Evergreen", mbl: "EGLV003600891653", cntr: "EMCU5979943", type: "FCL", etd: "8/7", eta: "9/17", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 14, carrier: "Wan Hai", mbl: "WHLC001GX28087", cntr: "WHSU2611807", type: "FCL", etd: "7/31", eta: "9/18", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 15, carrier: "Wan Hai", mbl: "WHLC001GX28390", cntr: "WHSU2782944", type: "FCL", etd: "7/31", eta: "9/18", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 16, carrier: "Wan Hai", mbl: "WHLC001GX29779", cntr: "WHSU2237699", type: "FCL", etd: "7/31", eta: "9/18", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 17, carrier: "ZIM", mbl: "ZIMUTPE8275076", cntr: "CAIU4430526", type: "FCL", etd: "8/5", eta: "9/20", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 18, carrier: "ZIM", mbl: "ZIMUTPE8275433", cntr: "JXLU4320213", type: "FCL", etd: "8/1", eta: "9/20", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 19, carrier: "Yang Ming", mbl: "YMJAE209084877", cntr: "YMLU5705677 / YMLU3633372", type: "FCL", etd: "7/29", eta: "9/20", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 20, carrier: "ZIM", mbl: "ZIMUTPE8276105", cntr: "GAOU6437302", type: "FCL", etd: "8/19", eta: "9/21", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 21, carrier: "Hapag-Lloyd", mbl: "HLCUTPE2606AOYV0", cntr: "FANU1079346", type: "FCL", etd: "8/12", eta: "9/22", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 22, carrier: "Hapag-Lloyd", mbl: "HLCUTPE260769060", cntr: "NIDU2353543", type: "FCL", etd: "8/12", eta: "9/22", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 23, carrier: "Yang Ming", mbl: "YMJAE216060135", cntr: "DRYU4244836", type: "FCL", etd: "7/28", eta: "9/23", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 24, carrier: "ONE", mbl: "ONEYTPEG57924400", cntr: "GCXU5260390", type: "GRP", etd: "8/2", eta: "9/24", ombl: "-", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 25, carrier: "ZIM", mbl: "ZIMUTPE8275369", cntr: "TEMU8051150", type: "FCL", etd: "8/17", eta: "9/25", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 26, carrier: "ZIM", mbl: "ZIMUTPE8275609", cntr: "TEMU8014921", type: "FCL", etd: "8/8", eta: "9/25", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 27, carrier: "ZIM", mbl: "ZIMUTPE8276104", cntr: "TCNU2713705", type: "FCL", etd: "8/18", eta: "9/28", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 28, carrier: "Yang Ming", mbl: "YMJAE202063516", cntr: "YMLU3598137", type: "FCL", etd: "8/6", eta: "9/30", ombl: "Pending OBL", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 29, carrier: "Yang Ming", mbl: "YMJAE209085244", cntr: "YMLU5437131", type: "FCL", etd: "8/9", eta: "9/30", ombl: "OBL on hand", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 30, carrier: "ONE", mbl: "ONEYTPEG60730700", cntr: "ONEU5836936", type: "GRP", etd: "8/9", eta: "10/7", ombl: "-", delivery: "On Vessel", notes: "-", isClosed: false },
-      { id: 31, carrier: "ONE", mbl: "ONEYTPEG62629900", cntr: "TRHU4244262", type: "GRP", etd: "8/9", eta: "10/7", ombl: "-", delivery: "On Vessel", notes: "-", isClosed: false },
-      // Closed Shipments
-      { id: 32, carrier: "ONE", mbl: "ONEYTPEG41629600", cntr: "ONEU1250206", type: "GRP", etd: "6/14", eta: "8/6", ombl: "STG", delivery: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
-      { id: 33, carrier: "ZIM", mbl: "ZIMUTPE8273866", cntr: "JXLU4721411", type: "FCL", etd: "6/22", eta: "8/13", ombl: "8/3 sent", delivery: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
-      { id: 34, carrier: "Evergreen", mbl: "EGLV149604612788", cntr: "EMCU8755572", type: "GRP", etd: "7/11", eta: "8/14", ombl: "STG", delivery: "CLEAR, all picked up", notes: "Closed", isClosed: true },
-      { id: 35, carrier: "Evergreen", mbl: "EGLV003600634944", cntr: "TCKU6128345", type: "FCL", etd: "7/8", eta: "8/14", ombl: "8/5 sent", delivery: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
-      { id: 36, carrier: "Wan Hai", mbl: "WHLC001GX24514", cntr: "WHSU5577671", type: "FCL", etd: "7/1", eta: "8/22", ombl: "8/11 sent", delivery: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true }
-    ];
-
     const carriersList = ["Evergreen", "ONE", "Yang Ming", "Wan Hai", "ZIM", "Hapag-Lloyd", "COSCO", "MSC", "Maersk", "CMA CGM"];
+    let shipments = JSON.parse(localStorage.getItem('pan_pacific_shipments')) || [];
 
-    let shipments = JSON.parse(localStorage.getItem('pan_pacific_shipments')) || defaultShipments;
+    async function fetchLiveJSON() {
+      try {
+        const res = await fetch('shipments.json?t=' + Date.now());
+        if (res.ok) {
+          const liveData = await res.json();
+          shipments = liveData;
+          localStorage.setItem('pan_pacific_shipments', JSON.stringify(shipments));
+          renderTable();
+        }
+      } catch (e) {
+        console.log("Using cached/local data:", e);
+        renderTable();
+      }
+    }
+
+    function getCarrierTrackingUrl(carrier, mbl, cntr) {
+      const queryNumber = (mbl || cntr || "").split('/')[0].trim();
+      if (!queryNumber) return "#";
+      switch(carrier) {
+        case "Evergreen": return `https://www.shipmentlink.com/servlet/TTrk_Tracking?bk_no=${queryNumber}&type=BL`;
+        case "ONE": return `https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trackingType=BL&trackingNumber=${queryNumber}`;
+        case "Yang Ming": return `https://www.yangming.com/e-service/track_trace/track_trace_cargo_tracking.aspx?type=bl&num=${queryNumber}`;
+        case "Wan Hai": return `https://www.wanhai.com/views/cargoTracking/cargoTracking.xhtml?blNo=${queryNumber}`;
+        case "ZIM": return `https://www.zim.com/tools/track-a-shipment?consignmentNumber=${queryNumber}`;
+        case "Hapag-Lloyd": return `https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=${queryNumber}`;
+        default: return `https://www.google.com/search?q=${encodeURIComponent(carrier + ' tracking ' + queryNumber)}`;
+      }
+    }
 
     function saveShipments() {
       localStorage.setItem('pan_pacific_shipments', JSON.stringify(shipments));
       renderTable();
     }
 
-    function resetToDefault() {
-      if (confirm("Are you sure you want to reset to original data? All current edits will be overwritten.")) {
-        shipments = [...defaultShipments];
-        saveShipments();
-      }
-    }
-
     function addNewRow() {
-      const newId = Date.now();
       shipments.unshift({
-        id: newId,
+        id: Date.now(),
         carrier: "Evergreen",
         mbl: "NEW_MBL",
         cntr: "NEW_CNTR",
@@ -339,7 +319,7 @@
     }
 
     function deleteRow(id) {
-      if (confirm("Delete this shipment entry?")) {
+      if (confirm("Delete this shipment?")) {
         shipments = shipments.filter(item => item.id !== id);
         saveShipments();
       }
@@ -367,12 +347,11 @@
       shipments.forEach(item => {
         if (item.isClosed) closed++;
         else active++;
-        if (item.ombl.toLowerCase().includes("pending")) pending++;
+        if (item.ombl && item.ombl.toLowerCase().includes("pending")) pending++;
       });
       document.getElementById("statActive").innerText = active;
       document.getElementById("statClosed").innerText = closed;
       document.getElementById("statPendingOBL").innerText = pending;
-      document.getElementById("statArriving").innerText = "6";
     }
 
     function renderTable() {
@@ -383,14 +362,13 @@
 
       const tbody = document.getElementById("shipmentTableBody");
       tbody.innerHTML = "";
-
       updateStats();
 
       const filtered = shipments.filter(item => {
-        const matchesSearch = item.mbl.toLowerCase().includes(searchVal) ||
-                              item.cntr.toLowerCase().includes(searchVal) ||
-                              item.delivery.toLowerCase().includes(searchVal) ||
-                              item.notes.toLowerCase().includes(searchVal);
+        const matchesSearch = (item.mbl || "").toLowerCase().includes(searchVal) ||
+                              (item.cntr || "").toLowerCase().includes(searchVal) ||
+                              (item.delivery || "").toLowerCase().includes(searchVal) ||
+                              (item.notes || "").toLowerCase().includes(searchVal);
         
         const matchesCarrier = (carrierVal === "ALL") || item.carrier === carrierVal;
         const matchesType = (typeVal === "ALL") || item.type === typeVal;
@@ -408,13 +386,18 @@
           `<option value="${c}" ${c === item.carrier ? "selected" : ""}>${c}</option>`
         ).join("");
 
+        const directTrackUrl = getCarrierTrackingUrl(item.carrier, item.mbl, item.cntr);
+
         tr.innerHTML = `
           <td>
-            <select class="carrier-select" onchange="updateCell(${item.id}, 'carrier', this.value)">
+            <select class="carrier-select" onchange="updateCell(${item.id}, 'carrier', this.value); renderTable();">
               ${carrierOptions}
             </select>
           </td>
-          <td><span class="editable font-mono text-mbl" contenteditable="true" onblur="updateCell(${item.id}, 'mbl', this.innerText)">${item.mbl}</span></td>
+          <td>
+            <span class="editable font-mono text-mbl" contenteditable="true" onblur="updateCell(${item.id}, 'mbl', this.innerText)">${item.mbl}</span>
+            <a class="track-btn" href="${directTrackUrl}" target="_blank">🔗 Track</a>
+          </td>
           <td><span class="editable font-mono" contenteditable="true" onblur="updateCell(${item.id}, 'cntr', this.innerText)">${item.cntr}</span></td>
           <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'type', this.innerText)">${item.type}</span></td>
           <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'etd', this.innerText)">${item.etd}</span></td>
@@ -450,7 +433,7 @@
     document.getElementById("typeFilter").addEventListener("change", renderTable);
     document.getElementById("statusFilter").addEventListener("change", renderTable);
 
-    document.addEventListener("DOMContentLoaded", renderTable);
+    document.addEventListener("DOMContentLoaded", fetchLiveJSON);
   </script>
 </body>
 </html>
