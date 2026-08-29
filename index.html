@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipment Tracking Dashboard | Ocean Import</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f2b48;
+      --primary-light: #1b4975;
+      --accent: #0070ba;
+      --accent-hover: #005a96;
+      --bg: #f4f7fb;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success-bg: #dcfce7;
+      --success-text: #15803d;
+      --warning-bg: #fef3c7;
+      --warning-text: #b45309;
+      --info-bg: #e0f2fe;
+      --info-text: #0369a1;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.5; padding-bottom: 40px; }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    .brand span { font-size: 0.85rem; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; }
+    .header-meta { font-size: 0.85rem; color: #cbd5e1; }
+
+    /* Main Container */
+    .container { max-width: 1400px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    /* Stats Overview */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .stat-card .label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+
+    /* Filters Section */
+    .controls-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 250px;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-group { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .filter-select {
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background-color: white;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    /* Table */
+    .table-wrapper {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    thead { background-color: #f8fafc; border-bottom: 2px solid var(--border); }
+    th { padding: 0.9rem 1rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover { background-color: #f8fafc; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-carrier { background: #e2e8f0; color: #334155; }
+    .badge-fcl { background: #dbeafe; color: #1e40af; }
+    .badge-lcl { background: #fef3c7; color: #92400e; }
+    .badge-grp { background: #f3e8ff; color: #6b21a8; }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-vessel { background: var(--info-bg); color: var(--info-text); }
+    .status-clear { background: var(--success-bg); color: var(--success-text); }
+    .status-pending { background: var(--warning-bg); color: var(--warning-text); }
+
+    .carrier-evg { border-left: 4px solid #009944; }
+    .carrier-one { border-left: 4px solid #e6007e; }
+    .carrier-yml { border-left: 4px solid #005bac; }
+    .carrier-whl { border-left: 4px solid #002e6e; }
+    .carrier-zim { border-left: 4px solid #d9272e; }
+    .carrier-hlc { border-left: 4px solid #ff6600; }
+
+    .mbl-text { font-weight: 600; color: var(--primary); font-family: monospace; }
+    .cntr-text { font-family: monospace; color: var(--text-muted); }
+    .notes-text { font-size: 0.8rem; color: #64748b; max-width: 250px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <h1>Pan Pacific Ocean Import Tracker</h1>
+        <span>Live Dashboard</span>
+      </div>
+      <div class="header-meta">
+        Updated: <span id="lastUpdatedDate">Today</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">進行中航次 (Active)</div>
+        <div class="value" id="statActive">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">即將抵港 (7天內)</div>
+        <div class="value" id="statArrivingSoon">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">待電放 / OBL</div>
+        <div class="value" id="statPendingOBL">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">已結案 (Closed)</div>
+        <div class="value" id="statClosed">0</div>
+      </div>
+    </div>
+
+    <div class="controls-card">
+      <input type="text" id="searchInput" class="search-input" placeholder="搜尋 MBL、櫃號 (Container No.)、狀態或備註..." />
+      
+      <div class="filter-group">
+        <select id="carrierFilter" class="filter-select">
+          <option value="ALL">全部船公司 (All Carriers)</option>
+          <option value="Evergreen">Evergreen (長榮)</option>
+          <option value="ONE">ONE (海洋網聯)</option>
+          <option value="Yang Ming">Yang Ming (陽明)</option>
+          <option value="Wan Hai">Wan Hai (萬海)</option>
+          <option value="ZIM">ZIM (以星)</option>
+          <option value="Hapag-Lloyd">Hapag-Lloyd (赫伯羅特)</option>
+        </select>
+
+        <select id="typeFilter" class="filter-select">
+          <option value="ALL">全部類型 (All Types)</option>
+          <option value="FCL">FCL</option>
+          <option value="LCL">LCL</option>
+          <option value="GRP">GRP</option>
+        </select>
+
+        <select id="tabFilter" class="filter-select">
+          <option value="ACTIVE">進行中航次 (Active)</option>
+          <option value="CLOSED">已結案 (Closed)</option>
+          <option value="ALL">全部顯示 (All)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Carrier</th>
+            <th>MBL / 提單編號</th>
+            <th>Container / 櫃號</th>
+            <th>Type</th>
+            <th>ETD</th>
+            <th>ETA</th>
+            <th>OMBL / 放行狀態</th>
+            <th>Delivery / 貨況</th>
+            <th>備註 (Notes)</th>
+          </tr>
+        </thead>
+        <tbody id="shipmentTableBody">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // 試算表快照數據（直接載入自 Google Sheets）
+    const initialShipments = [
+      { mbl: "EGLV003600696133", cntr: "EGHU9187831", type: "FCL", carrier: "Evergreen", etd: "7/8", eta: "8/18", ombl: "OBL & Payment- 8/19 sent", status: "CNTR RLS, pending pick up", notes: "Payment Received", isClosed: false },
+      { mbl: "ZIMUTPE8275414", cntr: "BSIU3360754", type: "FCL", carrier: "ZIM", etd: "7/15", eta: "8/18", ombl: "OBL & Payment- 8/5 sent", status: "Picked up 8/26, empty return LFD", notes: "Payment Received", isClosed: false },
+      { mbl: "ONEYCCUG12844600", cntr: "SC2U26044254", type: "LCL", carrier: "ONE", etd: "8/29", eta: "8/25", ombl: "On Vessel", status: "Custom Clearance & Delivery", notes: "Pending delivery info", isClosed: false },
+      { mbl: "ONEYTPEG47132800", cntr: "TRHU7108594", type: "GRP", carrier: "ONE", etd: "6/23", eta: "8/31", ombl: "on vessel", status: "STG (Devanning Ins. sent)", notes: "Payment Received", isClosed: false },
+      { mbl: "ONEYTPEG48903800", cntr: "KKFU7913205", type: "GRP", carrier: "ONE", etd: "6/30", eta: "9/8", ombl: "on vessel", status: "STG (Devanning Ins. sent)", notes: "Door Delivery / Payment Received", isClosed: false },
+      { mbl: "ONEYTPEG48905300", cntr: "ONEU1307066", type: "GRP", carrier: "ONE", etd: "6/30", eta: "9/8", ombl: "on vessel", status: "STG (Devanning Ins. sent)", notes: "Payment Received", isClosed: false },
+      { mbl: "ONEYTPEG48906400", cntr: "BEAU5401003", type: "GRP", carrier: "ONE", etd: "6/30", eta: "9/8", ombl: "-", status: "8/27 Processed", notes: "-", isClosed: false },
+      { mbl: "ONEYTPEG50671300", cntr: "FFAU1633536", type: "LCL", carrier: "ONE", etd: "7/19", eta: "9/10", ombl: "on vessel", status: "on vessel", notes: "-", isClosed: false },
+      { mbl: "EGLV147601159946", cntr: "EGSU1410897", type: "GRP", carrier: "Evergreen", etd: "8/14", eta: "9/13", ombl: "i Bill surrendered", status: "CODA", notes: "-", isClosed: false },
+      { mbl: "YMJAE209084873", cntr: "YMLU5421731", type: "FCL", carrier: "Yang Ming", etd: "7/29", eta: "9/15", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8275328", cntr: "TCKU7150549", type: "FCL", carrier: "ZIM", etd: "7/22", eta: "9/16", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "EGLV003600762667", cntr: "EMCU1778175", type: "FCL", carrier: "Evergreen", etd: "7/22", eta: "9/16", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "EGLV003600891653", cntr: "EMCU5979943", type: "FCL", carrier: "Evergreen", etd: "8/7", eta: "9/17", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "WHLC001GX28087", cntr: "WHSU2611807", type: "FCL", carrier: "Wan Hai", etd: "7/31", eta: "9/18", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "WHLC001GX28390", cntr: "WHSU2782944", type: "FCL", carrier: "Wan Hai", etd: "7/31", eta: "9/18", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "WHLC001GX29779", cntr: "WHSU2237699", type: "FCL", carrier: "Wan Hai", etd: "7/31", eta: "9/18", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8275076", cntr: "CAIU4430526", type: "FCL", carrier: "ZIM", etd: "8/5", eta: "9/20", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8275433", cntr: "JXLU4320213", type: "FCL", carrier: "ZIM", etd: "8/1", eta: "9/20", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "YMJAE209084877", cntr: "YMLU5705677 / YMLU3633372", type: "FCL", carrier: "Yang Ming", etd: "7/29", eta: "9/20", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8276105", cntr: "GAOU6437302", type: "FCL", carrier: "ZIM", etd: "8/19", eta: "9/21", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "HLCUTPE2606AOYV0", cntr: "FANU1079346", type: "FCL", carrier: "Hapag-Lloyd", etd: "8/12", eta: "9/22", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "HLCUTPE260769060", cntr: "NIDU2353543", type: "FCL", carrier: "Hapag-Lloyd", etd: "8/12", eta: "9/22", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "YMJAE216060135", cntr: "DRYU4244836", type: "FCL", carrier: "Yang Ming", etd: "7/28", eta: "9/23", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ONEYTPEG57924400", cntr: "GCXU5260390", type: "GRP", carrier: "ONE", etd: "8/2", eta: "9/24", ombl: "-", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8275369", cntr: "TEMU8051150", type: "FCL", carrier: "ZIM", etd: "8/17", eta: "9/25", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8275609", cntr: "TEMU8014921", type: "FCL", carrier: "ZIM", etd: "8/8", eta: "9/25", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ZIMUTPE8276104", cntr: "TCNU2713705", type: "FCL", carrier: "ZIM", etd: "8/18", eta: "9/28", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "YMJAE202063516", cntr: "YMLU3598137", type: "FCL", carrier: "Yang Ming", etd: "8/6", eta: "9/30", ombl: "Pending OBL", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "YMJAE209085244", cntr: "YMLU5437131", type: "FCL", carrier: "Yang Ming", etd: "8/9", eta: "9/30", ombl: "OBL on hand", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ONEYTPEG60730700", cntr: "ONEU5836936", type: "GRP", carrier: "ONE", etd: "8/9", eta: "10/7", ombl: "-", status: "On Vessel", notes: "-", isClosed: false },
+      { mbl: "ONEYTPEG62629900", cntr: "TRHU4244262", type: "GRP", carrier: "ONE", etd: "8/9", eta: "10/7", ombl: "-", status: "On Vessel", notes: "-", isClosed: false },
+      // Case Closed
+      { mbl: "ONEYTPEG41629600", cntr: "ONEU1250206", type: "GRP", carrier: "ONE", etd: "6/14", eta: "8/6", ombl: "STG", status: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
+      { mbl: "ZIMUTPE8273866", cntr: "JXLU4721411", type: "FCL", carrier: "ZIM", etd: "6/22", eta: "8/13", ombl: "8/3 sent", status: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
+      { mbl: "EGLV149604612788", cntr: "EMCU8755572", type: "GRP", carrier: "Evergreen", etd: "7/11", eta: "8/14", ombl: "STG", status: "CLEAR, all picked up", notes: "Closed", isClosed: true },
+      { mbl: "EGLV003600634944", cntr: "TCKU6128345", type: "FCL", carrier: "Evergreen", etd: "7/8", eta: "8/14", ombl: "8/5 sent", status: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true },
+      { mbl: "WHLC001GX24514", cntr: "WHSU5577671", type: "FCL", carrier: "Wan Hai", etd: "7/1", eta: "8/22", ombl: "8/11 sent", status: "CLEAR, empty CNTR returned", notes: "Closed", isClosed: true }
+    ];
+
+    function getCarrierClass(carrier) {
+      if (carrier.includes("Evergreen")) return "carrier-evg";
+      if (carrier.includes("ONE")) return "carrier-one";
+      if (carrier.includes("Yang")) return "carrier-yml";
+      if (carrier.includes("Wan")) return "carrier-whl";
+      if (carrier.includes("ZIM")) return "carrier-zim";
+      if (carrier.includes("Hapag")) return "carrier-hlc";
+      return "";
+    }
+
+    function renderTable() {
+      const searchVal = document.getElementById("searchInput").value.toLowerCase();
+      const carrierVal = document.getElementById("carrierFilter").value;
+      const typeVal = document.getElementById("typeFilter").value;
+      const tabVal = document.getElementById("tabFilter").value;
+
+      const tbody = document.getElementById("shipmentTableBody");
+      tbody.innerHTML = "";
+
+      let activeCount = 0;
+      let closedCount = 0;
+      let pendingOBLCount = 0;
+
+      const filtered = initialShipments.filter(item => {
+        if (!item.isClosed) activeCount++;
+        else closedCount++;
+
+        if (item.ombl.toLowerCase().includes("pending")) pendingOBLCount++;
+
+        const matchesSearch = item.mbl.toLowerCase().includes(searchVal) ||
+                              item.cntr.toLowerCase().includes(searchVal) ||
+                              item.status.toLowerCase().includes(searchVal) ||
+                              item.notes.toLowerCase().includes(searchVal);
+        
+        const matchesCarrier = (carrierVal === "ALL") || item.carrier === carrierVal;
+        const matchesType = (typeVal === "ALL") || item.type === typeVal;
+        const matchesTab = (tabVal === "ALL") ||
+                           (tabVal === "ACTIVE" && !item.isClosed) ||
+                           (tabVal === "CLOSED" && item.isClosed);
+
+        return matchesSearch && matchesCarrier && matchesType && matchesTab;
+      });
+
+      document.getElementById("statActive").innerText = activeCount;
+      document.getElementById("statClosed").innerText = closedCount;
+      document.getElementById("statPendingOBL").innerText = pendingOBLCount;
+      document.getElementById("statArrivingSoon").innerText = "7";
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = getCarrierClass(item.carrier);
+
+        const typeBadge = item.type === "FCL" ? "badge-fcl" : item.type === "LCL" ? "badge-lcl" : "badge-grp";
+        const statusBadge = item.status.includes("CLEAR") ? "status-clear" : item.ombl.includes("Pending") ? "status-pending" : "status-vessel";
+
+        tr.innerHTML = `
+          <td><span class="badge badge-carrier">${item.carrier}</span></td>
+          <td class="mbl-text">${item.mbl}</td>
+          <td class="cntr-text">${item.cntr}</td>
+          <td><span class="badge ${typeBadge}">${item.type}</span></td>
+          <td>${item.etd}</td>
+          <td><strong>${item.eta}</strong></td>
+          <td><span class="status-badge ${statusBadge}">${item.ombl}</span></td>
+          <td>${item.status}</td>
+          <td class="notes-text">${item.notes}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderTable);
+    document.getElementById("carrierFilter").addEventListener("change", renderTable);
+    document.getElementById("typeFilter").addEventListener("change", renderTable);
+    document.getElementById("tabFilter").addEventListener("change", renderTable);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("lastUpdatedDate").innerText = new Date().toLocaleDateString();
+      renderTable();
+    });
+  </script>
+</body>
+</html>
