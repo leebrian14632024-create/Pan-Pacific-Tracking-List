@@ -178,7 +178,6 @@
     .text-mbl { color: var(--primary); }
     .help-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right; }
 
-    /* Toast Notification */
     #toast {
       visibility: hidden;
       min-width: 250px;
@@ -317,7 +316,6 @@
     function trackCarrier(carrier, mbl, cntr) {
       const queryNumber = (mbl || cntr || "").split('/')[0].trim();
       
-      // 自動複製提單號到剪貼簿
       if (queryNumber && navigator.clipboard) {
         navigator.clipboard.writeText(queryNumber);
         showToast(`Copied "${queryNumber}"! Opening ${carrier} portal...`);
