@@ -1,28 +1,493 @@
-// 修正後的各大船公司官方即時查詢直達網址
-    function getCarrierTrackingUrl(carrier, mbl, cntr) {
-      const queryNumber = (mbl || cntr || "").split('/')[0].trim();
-      if (!queryNumber) return "#";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipment Tracking Dashboard | Pan Pacific Express</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0d233a;
+      --primary-light: #183e65;
+      --accent: #0070ba;
+      --accent-hover: #005a96;
+      --bg: #f4f7fb;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success-bg: #dcfce7;
+      --success-text: #15803d;
+      --warning-bg: #fef3c7;
+      --warning-text: #b45309;
+      --info-bg: #e0f2fe;
+      --info-text: #0369a1;
+      --danger-bg: #fee2e2;
+      --danger-text: #b91c1c;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --radius: 8px;
+    }
 
-      switch(carrier) {
-        case "Evergreen":
-          // 長榮 ShipmentLink Quick Tracking 直達
-          return `https://www.shipmentlink.com/servlet/TTrk_Tracking?bk_no=${queryNumber}&type=BL`;
-        case "ONE":
-          // ONE Ocean Network Express 官方查詢頁
-          return `https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trackingType=BL&trackingNumber=${queryNumber}`;
-        case "Yang Ming":
-          // 陽明海運最新貨況追蹤直達頁
-          return `https://www.yangming.com/e-service/track_trace/track_trace_cargo_tracking.aspx?type=bl&num=${queryNumber}`;
-        case "Wan Hai":
-          // 萬海航運 Cargo Tracking 直達頁
-          return `https://www.wanhai.com/views/cargoTracking/cargoTracking.xhtml?blNo=${queryNumber}`;
-        case "ZIM":
-          // 以星綜合航運直達追蹤
-          return `https://www.zim.com/tools/track-a-shipment?consignmentNumber=${queryNumber}`;
-        case "Hapag-Lloyd":
-          // 赫伯羅特 Online Business Tracking
-          return `https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=${queryNumber}`;
-        default:
-          return `https://www.google.com/search?q=${encodeURIComponent(carrier + ' tracking ' + queryNumber)}`;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 1.25rem 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header-wrap {
+      max-width: 1500px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.3px; }
+    .brand span { font-size: 0.8rem; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger-text); padding: 4px 8px; font-size: 0.75rem; }
+    .btn-danger:hover { background: #fecaca; }
+
+    .container { max-width: 1500px; margin: 1.5rem auto; padding: 0 1.5rem; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .stat-card .label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+
+    .controls {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    select.filter-select {
+      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: white;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .table-container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    thead { background-color: #f8fafc; border-bottom: 2px solid var(--border); }
+    th { padding: 0.85rem 1rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover { background-color: #fdfdfd; }
+
+    .editable {
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px dashed transparent;
+      transition: all 0.2s;
+    }
+    .editable:hover { border-color: #cbd5e1; background: #f8fafc; }
+    .editable:focus { outline: none; border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 2px rgba(0, 112, 186, 0.15); }
+    
+    .carrier-select {
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: white;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .track-btn {
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-left: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .track-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    
+    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; }
+    .text-mbl { color: var(--primary); }
+    .help-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right; }
+
+    /* Toast Notification */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #1e293b;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 12px;
+      position: fixed;
+      z-index: 9999;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.3s, fadeout 0.3s 2.2s;
+    }
+    @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+    @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-wrap">
+      <div class="brand">
+        <h1>Pan Pacific Ocean Import Tracking</h1>
+        <span>Live Portal</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="fetchLiveJSON()">🔄 Fetch Latest ETA</button>
+        <button class="btn btn-outline" onclick="addNewRow()">+ Add Shipment</button>
+        <button class="btn btn-outline" onclick="exportToCSV()">Export CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Active Shipments</div>
+        <div class="value" id="statActive">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending OBL / Documents</div>
+        <div class="value" id="statPendingOBL">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Closed Shipments</div>
+        <div class="value" id="statClosed">0</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by MBL, Container No., Release, or Notes..." />
+      
+      <div class="filters">
+        <select id="carrierFilter" class="filter-select">
+          <option value="ALL">All Carriers</option>
+          <option value="Evergreen">Evergreen</option>
+          <option value="ONE">ONE</option>
+          <option value="Yang Ming">Yang Ming</option>
+          <option value="Wan Hai">Wan Hai</option>
+          <option value="ZIM">ZIM</option>
+          <option value="Hapag-Lloyd">Hapag-Lloyd</option>
+        </select>
+
+        <select id="typeFilter" class="filter-select">
+          <option value="ALL">All Types</option>
+          <option value="FCL">FCL</option>
+          <option value="LCL">LCL</option>
+          <option value="GRP">GRP</option>
+        </select>
+
+        <select id="statusFilter" class="filter-select">
+          <option value="ACTIVE">Active Shipments</option>
+          <option value="CLOSED">Closed Only</option>
+          <option value="ALL">Show All</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Carrier</th>
+            <th>MBL / B/L No.</th>
+            <th>Container No.</th>
+            <th>Type</th>
+            <th>ETD</th>
+            <th>ETA</th>
+            <th>OMBL / Release Status</th>
+            <th>Delivery / Terminal Status</th>
+            <th>Notes</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="shipmentTableBody"></tbody>
+      </table>
+    </div>
+    <p class="help-hint">💡 <em>Tip: Click <strong>"🔗 Track"</strong> to copy B/L and open carrier tracking portal. All cells are editable.</em></p>
+  </div>
+
+  <div id="toast">B/L copied to clipboard! Opening tracking portal...</div>
+
+  <script>
+    const carriersList = ["Evergreen", "ONE", "Yang Ming", "Wan Hai", "ZIM", "Hapag-Lloyd", "COSCO", "MSC", "Maersk", "CMA CGM"];
+    let shipments = JSON.parse(localStorage.getItem('pan_pacific_shipments')) || [];
+
+    async function fetchLiveJSON() {
+      try {
+        const res = await fetch('shipments.json?t=' + Date.now());
+        if (res.ok) {
+          const liveData = await res.json();
+          shipments = liveData;
+          localStorage.setItem('pan_pacific_shipments', JSON.stringify(shipments));
+          renderTable();
+        }
+      } catch (e) {
+        console.log("Using cached/local data:", e);
+        renderTable();
       }
     }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+    }
+
+    function trackCarrier(carrier, mbl, cntr) {
+      const queryNumber = (mbl || cntr || "").split('/')[0].trim();
+      
+      // 自動複製提單號到剪貼簿
+      if (queryNumber && navigator.clipboard) {
+        navigator.clipboard.writeText(queryNumber);
+        showToast(`Copied "${queryNumber}"! Opening ${carrier} portal...`);
+      }
+
+      let url = "";
+      switch(carrier) {
+        case "Evergreen":
+          url = "https://www.shipmentlink.com/tvs2/jsp/TVS2_InteractiveSchedule.jsp";
+          break;
+        case "ONE":
+          url = "https://ecomm.one-line.com/ecom/CUP_HOM_3301.do";
+          break;
+        case "Yang Ming":
+          url = "https://e-solution.yangming.com/e-service/track_trace/track_trace_cargo_tracking.aspx";
+          break;
+        case "Wan Hai":
+          url = "https://www.wanhai.com/views/Main.xhtml";
+          break;
+        case "ZIM":
+          url = "https://www.zim.com/tools/track-a-shipment";
+          break;
+        case "Hapag-Lloyd":
+          url = `https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=${queryNumber}`;
+          break;
+        default:
+          url = `https://www.google.com/search?q=${encodeURIComponent(carrier + ' tracking ' + queryNumber)}`;
+      }
+
+      setTimeout(() => {
+        window.open(url, '_blank');
+      }, 300);
+    }
+
+    function saveShipments() {
+      localStorage.setItem('pan_pacific_shipments', JSON.stringify(shipments));
+      renderTable();
+    }
+
+    function addNewRow() {
+      shipments.unshift({
+        id: Date.now(),
+        carrier: "Evergreen",
+        mbl: "NEW_MBL",
+        cntr: "NEW_CNTR",
+        type: "FCL",
+        etd: "MM/DD",
+        eta: "MM/DD",
+        ombl: "Pending OBL",
+        delivery: "On Vessel",
+        notes: "-",
+        isClosed: false
+      });
+      saveShipments();
+    }
+
+    function deleteRow(id) {
+      if (confirm("Delete this shipment?")) {
+        shipments = shipments.filter(item => item.id !== id);
+        saveShipments();
+      }
+    }
+
+    function toggleClosed(id) {
+      const item = shipments.find(s => s.id === id);
+      if (item) {
+        item.isClosed = !item.isClosed;
+        saveShipments();
+      }
+    }
+
+    function updateCell(id, field, value) {
+      const item = shipments.find(s => s.id === id);
+      if (item) {
+        item[field] = value.trim();
+        localStorage.setItem('pan_pacific_shipments', JSON.stringify(shipments));
+        updateStats();
+      }
+    }
+
+    function updateStats() {
+      let active = 0, closed = 0, pending = 0;
+      shipments.forEach(item => {
+        if (item.isClosed) closed++;
+        else active++;
+        if (item.ombl && item.ombl.toLowerCase().includes("pending")) pending++;
+      });
+      document.getElementById("statActive").innerText = active;
+      document.getElementById("statClosed").innerText = closed;
+      document.getElementById("statPendingOBL").innerText = pending;
+    }
+
+    function renderTable() {
+      const searchVal = document.getElementById("searchInput").value.toLowerCase();
+      const carrierVal = document.getElementById("carrierFilter").value;
+      const typeVal = document.getElementById("typeFilter").value;
+      const statusVal = document.getElementById("statusFilter").value;
+
+      const tbody = document.getElementById("shipmentTableBody");
+      tbody.innerHTML = "";
+      updateStats();
+
+      const filtered = shipments.filter(item => {
+        const matchesSearch = (item.mbl || "").toLowerCase().includes(searchVal) ||
+                              (item.cntr || "").toLowerCase().includes(searchVal) ||
+                              (item.delivery || "").toLowerCase().includes(searchVal) ||
+                              (item.notes || "").toLowerCase().includes(searchVal);
+        
+        const matchesCarrier = (carrierVal === "ALL") || item.carrier === carrierVal;
+        const matchesType = (typeVal === "ALL") || item.type === typeVal;
+        const matchesStatus = (statusVal === "ALL") ||
+                             (statusVal === "ACTIVE" && !item.isClosed) ||
+                             (statusVal === "CLOSED" && item.isClosed);
+
+        return matchesSearch && matchesCarrier && matchesType && matchesStatus;
+      });
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+
+        let carrierOptions = carriersList.map(c => 
+          `<option value="${c}" ${c === item.carrier ? "selected" : ""}>${c}</option>`
+        ).join("");
+
+        tr.innerHTML = `
+          <td>
+            <select class="carrier-select" onchange="updateCell(${item.id}, 'carrier', this.value); renderTable();">
+              ${carrierOptions}
+            </select>
+          </td>
+          <td>
+            <span class="editable font-mono text-mbl" contenteditable="true" onblur="updateCell(${item.id}, 'mbl', this.innerText)">${item.mbl}</span>
+            <button class="track-btn" onclick="trackCarrier('${item.carrier}', '${item.mbl}', '${item.cntr}')">🔗 Track</button>
+          </td>
+          <td><span class="editable font-mono" contenteditable="true" onblur="updateCell(${item.id}, 'cntr', this.innerText)">${item.cntr}</span></td>
+          <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'type', this.innerText)">${item.type}</span></td>
+          <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'etd', this.innerText)">${item.etd}</span></td>
+          <td><strong class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'eta', this.innerText)">${item.eta}</strong></td>
+          <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'ombl', this.innerText)">${item.ombl}</span></td>
+          <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'delivery', this.innerText)">${item.delivery}</span></td>
+          <td><span class="editable" contenteditable="true" onblur="updateCell(${item.id}, 'notes', this.innerText)">${item.notes}</span></td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline" style="padding:2px 6px; font-size:0.75rem;" onclick="toggleClosed(${item.id})">${item.isClosed ? 'Reopen' : 'Close'}</button>
+              <button class="btn btn-danger" onclick="deleteRow(${item.id})">✕</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportToCSV() {
+      let csv = "Carrier,MBL,Container,Type,ETD,ETA,OMBL_Status,Delivery_Status,Notes,IsClosed\n";
+      shipments.forEach(s => {
+        csv += `"${s.carrier}","${s.mbl}","${s.cntr}","${s.type}","${s.etd}","${s.eta}","${s.ombl}","${s.delivery}","${s.notes}","${s.isClosed}"\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Pan_Pacific_Shipment_Tracking_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderTable);
+    document.getElementById("carrierFilter").addEventListener("change", renderTable);
+    document.getElementById("typeFilter").addEventListener("change", renderTable);
+    document.getElementById("statusFilter").addEventListener("change", renderTable);
+
+    document.addEventListener("DOMContentLoaded", fetchLiveJSON);
+  </script>
+</body>
+</html>
